@@ -12,6 +12,9 @@ package
 	
 	public class AirScroll extends Sprite
 	{
+		private var appWidth:Number;
+		private var appHeight:Number;
+		
 		private static const DEF_WIDTH:uint = 640;
 		private static const DEF_HEIGHT:uint = 960;
 		
@@ -26,6 +29,17 @@ package
 			
 			TweenPlugin.activate( [ThrowPropsPlugin] );
 			
+			appWidth = this.stage.fullScreenWidth;
+			appHeight = this.stage.fullScreenHeight;
+			var flashVars:Object = this.root.loaderInfo.parameters;
+			if( flashVars["webWidth"] )
+			{
+				appWidth = Number(flashVars["webWidth"]);
+			}
+			if( flashVars["webHeight"] )
+			{
+				appHeight = Number(flashVars["webHeight"]);
+			}
 			fitScale();
 			
 			var i:int;
@@ -54,26 +68,26 @@ package
 			
 			var vScrollCtrl:ScrollCtrl = new ScrollCtrl(
 				vectBg, vectCt, new Rectangle( 0, 0, 610, 680 ),
-				ScrollDirection.VECTORIAL, false, true, 0xffffff, -10, 0, 1.0,
-				50, 1.2, 0.2, 0, 0, 30, 0 );
+				ScrollDirection.VECTORIAL, false, true, 0xffffff, -10, 0, 1.5,
+				30, 2.0, 0.2, 0, 0, 30, 0 );
 		}
 		
 		/**分辨率自适应*/
 		private function fitScale():void
 		{
-			var oriScaleX:Number = stage.fullScreenWidth / DEF_WIDTH;
-			var oriScaleY:Number = stage.fullScreenHeight / DEF_HEIGHT;
+			var oriScaleX:Number = appWidth / DEF_WIDTH;
+			var oriScaleY:Number = appHeight / DEF_HEIGHT;
 			
 			var minScale:Number = ( oriScaleX > oriScaleY ? oriScaleY : oriScaleX );
 			
 			this.scaleX = this.scaleY = minScale;
 			if( minScale < oriScaleX )
 			{
-				this.x = ( stage.fullScreenWidth - DEF_WIDTH * minScale ) * 0.5;
+				this.x = ( appWidth - DEF_WIDTH * minScale ) * 0.5;
 			}
 			else if( minScale < oriScaleY )
 			{
-				this.y = ( stage.fullScreenHeight - DEF_HEIGHT * minScale ) * 0.5;
+				this.y = ( appHeight - DEF_HEIGHT * minScale ) * 0.5;
 			}
 		}
 	}

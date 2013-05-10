@@ -149,7 +149,6 @@ package com.wuzhiwei.scroll
 		 */
 		public function setDataList( dataList:*, initIndex:int = 0 ):void
 		{
-			trace( "setDataList" );
 			if( initIndex >= dataList.length || initIndex < 0 )
 			{
 				trace( "Error: initIndex "+ initIndex +" is illegal!" );

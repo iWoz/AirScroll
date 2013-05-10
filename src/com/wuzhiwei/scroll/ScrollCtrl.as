@@ -1,6 +1,7 @@
 package com.wuzhiwei.scroll
 {
 	import com.greensock.BlitMask;
+	import com.greensock.TimelineLite;
 	import com.greensock.TweenLite;
 	import com.greensock.easing.Strong;
 	import com.greensock.plugins.ThrowPropsPlugin;
@@ -101,8 +102,8 @@ package com.wuzhiwei.scroll
 									sideBarOffsetY:Number = -20,
 									speedFactor:Number = 1.0, 
 									resistance:Number = 20.0, 
-									tweenMaxDuration:Number = 1.6, 
-									tweenMinDuration:Number = 0.25,
+									tweenMaxDuration:Number = 2.0, 
+									tweenMinDuration:Number = 0.2,
 									minXOffset:Number = 0,
 									maxXOffset:Number = 0,
 		                            minYOffset:Number = 0,
@@ -121,6 +122,8 @@ package com.wuzhiwei.scroll
 			_resistance = resistance;
 			_sideBarOffsetX = sideBarOffsetX;
 			_sideBarOffsetY = sideBarOffsetY;
+			_tweenMaxDuration = tweenMaxDuration;
+			_tweenMinDuration = tweenMinDuration;
 			
 			if( _bg.stage )
 			{
@@ -175,6 +178,7 @@ package com.wuzhiwei.scroll
 			calOverLap();
 			initSideBar( true );
 			updateSideBar();
+			twinkingSideBar();
 		}
 		
 		/**
@@ -187,7 +191,8 @@ package com.wuzhiwei.scroll
 			forceUpdate();
 			if( _sideBar && _needSideBar )
 			{
-				_sideBar.visible = true;
+				twinkingSideBar();
+				initSideBar( true );
 			}
 		}
 		
@@ -229,7 +234,6 @@ package com.wuzhiwei.scroll
 				_target.parent.addChild( _sideBar );
 				forceUpdate = true;
 				_sideBar.visible = _needSideBar;
-				_sideBar.alpha = 0;
 			}
 			if( _sideBar && forceUpdate )
 			{
@@ -240,14 +244,14 @@ package com.wuzhiwei.scroll
 					_sideBarWidth = _bounds.width / (_bounds.width - _minX) * _bounds.width;
 					_sideBarMaxDist = _bounds.width - _sideBarWidth;
 					_scrollEndX = _minX;
-					_sideBar.visible = (0 >= _minX);
+					_sideBar.visible = (0 > _minX);
 				}
 				else if( _direct == ScrollDirection.VECTORIAL )
 				{
 					_sideBarHeight = _bounds.height / (_bounds.height - _minY ) * _bounds.height;
 					_sideBarMaxDist = _bounds.height - _sideBarHeight;
 					_scrollEndY = _minY;
-					_sideBar.visible = (0 >= _minY);
+					_sideBar.visible = (0 > _minY);
 				}
 				drawSideBar( _sideBarWidth, _sideBarHeight );
 			}
@@ -317,6 +321,7 @@ package com.wuzhiwei.scroll
 		{
 			if( _sideBar )
 			{
+				TweenLite.killTweensOf( _sideBar );
 				TweenLite.to( _sideBar, 0.5, { alpha:1 } );
 			}
 		}
@@ -329,9 +334,27 @@ package com.wuzhiwei.scroll
 		{
 			if( _sideBar )
 			{
+				TweenLite.killTweensOf( _sideBar );
 				TweenLite.to( _sideBar, 0.5, { alpha:0 } );
 			}
 		}
+		
+		/**
+		 * 闪烁滑移条，提示可以滑移
+		 * 
+		 */		
+		protected function twinkingSideBar():void
+		{
+			if( _sideBar )
+			{
+				TweenLite.killTweensOf( _sideBar );
+				_sideBar.alpha = 0;
+				var tl:TimelineLite = new TimelineLite();
+				tl.append( TweenLite.to( _sideBar, 0.8, { alpha: 1 } ) );
+				tl.append( TweenLite.to( _sideBar, 0.8, { alpha: 0 } ) );
+			}
+		}
+		
 		/**
 		 * 添加鼠标按下的事件，鼠标按下则代表滑移监听的开始 
 		 * 
@@ -541,7 +564,8 @@ package com.wuzhiwei.scroll
 				//则将其visible设为false
 				if( _direct == ScrollDirection.VECTORIAL || _direct == ScrollDirection.BOTH )
 				{
-					if( child.y + child.height + _target.y < _bounds.top - MAX_VISIBLE_DIST ||  child.y + _target.y > _bounds.bottom + MAX_VISIBLE_DIST )
+					if( child.y + child.height + _target.y < _bounds.top - MAX_VISIBLE_DIST ||
+						child.y + _target.y > _bounds.bottom + MAX_VISIBLE_DIST )
 					{
 						child.visible = false;
 					}
@@ -552,7 +576,8 @@ package com.wuzhiwei.scroll
 				}
 				else if( _direct == ScrollDirection.HORIZONTAL || _direct == ScrollDirection.BOTH )
 				{
-					if( child.x + child.width + _target.x < _bounds.left - MAX_VISIBLE_DIST ||  child.x + _target.x > _bounds.right + MAX_VISIBLE_DIST )
+					if( child.x + child.width + _target.x < _bounds.left - MAX_VISIBLE_DIST ||
+						child.x + _target.x > _bounds.right + MAX_VISIBLE_DIST )
 					{
 						child.visible = false;
 					}
