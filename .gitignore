@@ -6,7 +6,9 @@
 *.ipa
 Default*.png
 cert/
-
+bin-debug/
+and_adt.bat
+ios_adt.bat
 ## Eclipse
 #################
 
