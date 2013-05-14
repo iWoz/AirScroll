@@ -113,7 +113,7 @@ package com.wuzhiwei.scroll
 									tweenMinDuration:Number = 0.2,
 									minXOffset:Number = 0,
 									maxXOffset:Number = 0,
-		                            minYOffset:Number = 0,
+									minYOffset:Number = 0,
 									maxYOffset:Number = 0)
 		{
 			
