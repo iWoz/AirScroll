@@ -9,6 +9,7 @@ package com.wuzhiwei.scroll
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.events.TouchEvent;
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.utils.getDefinitionByName;
@@ -158,14 +159,14 @@ package com.wuzhiwei.scroll
 		}
 		
 		
-		override protected function mouseDownHandler(e:MouseEvent):void
+		override protected function mouseDownHandler(e:Event):void
 		{
 			_knowMode = false;
 			_scrollMode = VMODE;
 			super.mouseDownHandler( e );
 		}
 		
-		override protected function mouseMoveHandler(e:MouseEvent):void
+		override protected function mouseMoveHandler(e:Event):void
 		{
 			if( _isMouseDown )
 			{
@@ -244,12 +245,20 @@ package com.wuzhiwei.scroll
 					_t1 = t;
 				}
 				updateSideBar();
-				e.updateAfterEvent();
+				if( e is MouseEvent )
+				{
+					(e as MouseEvent).updateAfterEvent();					
+				}
+				else if( e is TouchEvent )
+				{
+					(e as TouchEvent).updateAfterEvent();					
+				}
 			}
 		}
 		
 		override protected function tweenAfterRelease():void
 		{
+			AirScroll.log( "tweenAfterRelease." );
 			enableTargetMouse();
 			
 			var time:Number = ( getTimer() - _t2 ) * 0.001;
@@ -260,7 +269,7 @@ package com.wuzhiwei.scroll
 			{
 				var throwProps:Object = {};
 				throwProps["y"] = { velocity:yVelocity, max:_maxY, min: _minY, resistance:_resistance };
-				_tween = ThrowPropsPlugin.to( _target, 
+				ThrowPropsPlugin.to( _target, 
 					{ throwProps:throwProps, ease:Strong.easeOut,
 						onUpdate:updateHandler, onComplete:stopAll },
 					_tweenMaxDuration, _tweenMinDuration, 0.2 );
@@ -332,6 +341,7 @@ package com.wuzhiwei.scroll
 		 */		
 		protected function switchToPage():void
 		{
+			AirScroll.log("switchToPage");
 			_target.y = _tarY;
 			_target.x = _tarX;
 			_target.removeChildren();

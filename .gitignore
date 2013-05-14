@@ -1,9 +1,16 @@
 #################
+## Self Define
+#################
+
+*.apk
+*.ipa
+Default*.png
+cert/
+
 ## Eclipse
 #################
 
 *.pydevproject
-.project
 .metadata
 bin/
 tmp/

@@ -12,8 +12,10 @@ package com.wuzhiwei.scroll
 	import flash.display.StageQuality;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.events.TouchEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.system.Capabilities;
 	import flash.utils.getTimer;
 	
 	public class ScrollCtrl
@@ -40,7 +42,6 @@ package com.wuzhiwei.scroll
 		protected var _minY:Number = 0;
 		protected var _maxY:Number = 0;
 		
-		protected var _tween:TweenLite;
 		protected var _tweenMaxDuration:Number;
 		protected var _tweenMinDuration:Number;
 		protected var _speedFactor:Number = 2.0;
@@ -65,6 +66,12 @@ package com.wuzhiwei.scroll
 		protected var _needUpdateWhenMove:Boolean = true;
 		
 		protected var _stageQuality:String = StageQuality.MEDIUM;
+		
+		/**
+		 * ios设备对mouseEvent的MOUSE_UP和ROLL_OUT的触发会有不响应的情况
+		 * 若此值为true，则使用touchEvent来代替mouseEvent 
+		 */		
+		protected var _useTouchEvent:Boolean = false;
 		
 		protected static const MAX_CLICK_MOVE_DIST:Number = 7.0;
 		protected static const MAX_VISIBLE_DIST:Number = 80;
@@ -125,6 +132,17 @@ package com.wuzhiwei.scroll
 			_tweenMaxDuration = tweenMaxDuration;
 			_tweenMinDuration = tweenMinDuration;
 			
+			//仅针对windows模拟，启用鼠标事件侦听
+			if( Capabilities.os.toLocaleLowerCase().indexOf( "windows" ) >= 0 )
+			{
+				_useTouchEvent = false;
+			}
+			else
+			{
+				_useTouchEvent = true;
+			}
+			AirScroll.log( "_useTouchEvent:"+_useTouchEvent );
+			
 			if( _bg.stage )
 			{
 				_stageQuality = _bg.stage.quality;
@@ -174,6 +192,14 @@ package com.wuzhiwei.scroll
 			if( _mask && !_target.mask )
 			{
 				_target.mask = _mask;
+			}
+			var i:int;
+			var numChildren:int = _target.numChildren;
+			var child:DisplayObject;
+			for(i = 0; i < numChildren; i++)
+			{
+				child = _target.getChildAt( i );
+				child.visible = true;
 			}
 			calOverLap();
 			initSideBar( true );
@@ -362,7 +388,15 @@ package com.wuzhiwei.scroll
 		protected function addMouseDownListener():void
 		{
 			//useWeakReference为false，避免GC移除down事件
-			_bg.addEventListener( MouseEvent.MOUSE_DOWN, mouseDownHandler );
+			AirScroll.log( "===========addMouseDownListener==========" );
+			if( _useTouchEvent )
+			{
+				_bg.addEventListener( TouchEvent.TOUCH_BEGIN, mouseDownHandler );
+			}
+			else
+			{
+				_bg.addEventListener( MouseEvent.MOUSE_DOWN, mouseDownHandler );				
+			}
 		}
 		
 		/**
@@ -371,8 +405,11 @@ package com.wuzhiwei.scroll
 		 * @param e
 		 * 
 		 */		
-		protected function mouseDownHandler( e:MouseEvent ):void
+		protected function mouseDownHandler( e:Event ):void
 		{
+			AirScroll.log( "=====================" );
+			AirScroll.log( "super mouseDownHandler" );
+			
 			if( _bg.stage )
 			{
 				_bg.stage.quality = StageQuality.LOW;				
@@ -392,11 +429,19 @@ package com.wuzhiwei.scroll
 			calOverLap();
 			_t1 = _t2 = getTimer();
 			
-			_bg.addEventListener( MouseEvent.MOUSE_MOVE, mouseMoveHandler, false, 0, true );
-			_bg.addEventListener( MouseEvent.MOUSE_UP, mouseLeaveHandler, false, 0, true );
-			_bg.addEventListener( MouseEvent.ROLL_OUT, mouseLeaveHandler, false, 0, true );
+			if( _useTouchEvent )
+			{
+				_bg.addEventListener( TouchEvent.TOUCH_MOVE, mouseMoveHandler );
+				_bg.addEventListener( TouchEvent.TOUCH_END, mouseLeaveHandler );
+				_bg.addEventListener( TouchEvent.TOUCH_ROLL_OUT, mouseLeaveHandler );	
+			}
+			else
+			{
+				_bg.addEventListener( MouseEvent.MOUSE_MOVE, mouseMoveHandler );
+				_bg.addEventListener( MouseEvent.MOUSE_UP, mouseLeaveHandler );
+				_bg.addEventListener( MouseEvent.ROLL_OUT, mouseLeaveHandler );				
+			}
 			
-			_bg.removeEventListener( MouseEvent.MOUSE_DOWN, mouseDownHandler );
 		}
 		
 		/**
@@ -416,7 +461,7 @@ package com.wuzhiwei.scroll
 		 * @param e
 		 * 
 		 */		
-		protected function mouseMoveHandler( e:MouseEvent ):void
+		protected function mouseMoveHandler( e:Event ):void
 		{
 			if( _isMouseDown )
 			{
@@ -441,7 +486,7 @@ package com.wuzhiwei.scroll
 				{
 					if( _needUpdateWhenMove )
 					{
-						_bg.addEventListener( Event.ENTER_FRAME, updateHandler, false, 0, true );
+						_bg.addEventListener( Event.ENTER_FRAME, updateHandler );
 					}
 					_isMouseMoved = true;
 					enableBlitMask();
@@ -491,7 +536,14 @@ package com.wuzhiwei.scroll
 					_t1 = t;
 				}
 				updateSideBar();
-				e.updateAfterEvent();
+				if( e is MouseEvent )
+				{
+					(e as MouseEvent).updateAfterEvent();					
+				}
+				else if( e is TouchEvent )
+				{
+					(e as TouchEvent).updateAfterEvent();					
+				}
 			}
 		}
 		
@@ -500,16 +552,24 @@ package com.wuzhiwei.scroll
 		 * @param e
 		 * 
 		 */		
-		protected function mouseLeaveHandler( e:MouseEvent ):void
+		protected function mouseLeaveHandler( e:Event ):void
 		{
+			AirScroll.log( "super mouseLeaveHandler "+e.type );
 			_isMouseDown = false;
 			
-			addMouseDownListener();
-			_bg.removeEventListener( MouseEvent.MOUSE_UP, mouseLeaveHandler );
-			_bg.removeEventListener( MouseEvent.ROLL_OUT, mouseLeaveHandler );
-			_bg.removeEventListener( Event.ENTER_FRAME, updateHandler );
-			
 			tweenAfterRelease();
+			
+			_bg.removeEventListener( Event.ENTER_FRAME, updateHandler );
+			if( _useTouchEvent )
+			{
+				_bg.removeEventListener( TouchEvent.TOUCH_END, mouseLeaveHandler );
+				_bg.removeEventListener( TouchEvent.TOUCH_ROLL_OUT, mouseLeaveHandler );
+			}
+			else
+			{
+				_bg.removeEventListener( MouseEvent.MOUSE_UP, mouseLeaveHandler );
+				_bg.removeEventListener( MouseEvent.ROLL_OUT, mouseLeaveHandler );				
+			}
 		}
 		
 		/**
@@ -518,6 +578,7 @@ package com.wuzhiwei.scroll
 		 */		
 		protected function tweenAfterRelease():void
 		{
+			AirScroll.log( "super tweenAfterRelease." );
 			enableTargetMouse();
 			
 			var time:Number = ( getTimer() - _t2 ) * 0.001;
@@ -535,7 +596,7 @@ package com.wuzhiwei.scroll
 			{
 				throwProps["y"] = { velocity:yVelocity, max:_maxY, min: _minY, resistance:_resistance };
 			}
-			_tween = ThrowPropsPlugin.to( _target, 
+			ThrowPropsPlugin.to( _target, 
 				{ throwProps:throwProps, ease:Strong.easeOut,
 					onUpdate:updateHandler, onComplete:stopAll },
 				_tweenMaxDuration, _tweenMinDuration, 0.2 );
@@ -587,6 +648,7 @@ package com.wuzhiwei.scroll
 					}
 				}
 			}
+			
 		}
 		/**
 		 * 若blitmask存在，则启用其位图渲染模式 
@@ -636,11 +698,22 @@ package com.wuzhiwei.scroll
 		 */		
 		protected function removeAllListeners():void
 		{
+			AirScroll.log( "removeAllListeners" );
 			_bg.removeEventListener( Event.ENTER_FRAME, updateHandler );
-			_bg.removeEventListener( MouseEvent.MOUSE_DOWN, mouseDownHandler );
-			_bg.removeEventListener( MouseEvent.MOUSE_MOVE, mouseLeaveHandler );
-			_bg.removeEventListener( MouseEvent.MOUSE_UP, mouseLeaveHandler );
-			_bg.removeEventListener( MouseEvent.ROLL_OUT, mouseLeaveHandler );
+			if( _useTouchEvent )
+			{
+				_bg.removeEventListener( TouchEvent.TOUCH_BEGIN, mouseDownHandler );
+				_bg.removeEventListener( TouchEvent.TOUCH_MOVE, mouseMoveHandler );
+				_bg.removeEventListener( TouchEvent.TOUCH_END, mouseLeaveHandler );
+				_bg.removeEventListener( TouchEvent.TOUCH_ROLL_OUT, mouseLeaveHandler );	
+			}
+			else
+			{
+				_bg.removeEventListener( MouseEvent.MOUSE_DOWN, mouseDownHandler );
+				_bg.removeEventListener( MouseEvent.MOUSE_MOVE, mouseMoveHandler );
+				_bg.removeEventListener( MouseEvent.MOUSE_UP, mouseLeaveHandler );
+				_bg.removeEventListener( MouseEvent.ROLL_OUT, mouseLeaveHandler );				
+			}
 		}
 		
 		/**
@@ -667,11 +740,8 @@ package com.wuzhiwei.scroll
 		 */		
 		protected function killTweens():void
 		{
-			if( _tween )
-			{
-				_tween.kill();
-				_tween = null;
-			}
+			TweenLite.killTweensOf( _target );
+			AirScroll.log("kill tweens");
 		}
 		
 		/**
