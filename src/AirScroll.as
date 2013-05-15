@@ -54,8 +54,8 @@ package
 			cons.height = 150;
 			cons.y = DEF_HEIGHT - cons.height - 80;
 			addChild( cons );
-			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
-			cons.text.appendText( Multitouch.supportsTouchEvents+" "+MultitouchInputMode.TOUCH_POINT+"\n" );
+			Multitouch.inputMode = MultitouchInputMode.NONE;
+			cons.text.appendText( Multitouch.supportsTouchEvents+" "+Multitouch.inputMode+"\n" );
 				
 			var i:int;
 			

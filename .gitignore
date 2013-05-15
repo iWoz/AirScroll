@@ -7,6 +7,7 @@
 Default*.png
 cert/
 bin-debug/
+bin-release-temp/
 and_adt.bat
 ios_adt.bat
 ## Eclipse

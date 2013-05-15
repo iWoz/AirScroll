@@ -9,7 +9,6 @@ package com.wuzhiwei.scroll
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import flash.events.TouchEvent;
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.utils.getDefinitionByName;
@@ -159,14 +158,14 @@ package com.wuzhiwei.scroll
 		}
 		
 		
-		override protected function mouseDownHandler(e:Event):void
+		override protected function mouseDownHandler(e:MouseEvent):void
 		{
 			_knowMode = false;
 			_scrollMode = VMODE;
 			super.mouseDownHandler( e );
 		}
 		
-		override protected function mouseMoveHandler(e:Event):void
+		override protected function mouseMoveHandler(e:MouseEvent):void
 		{
 			if( _isMouseDown )
 			{
@@ -245,14 +244,7 @@ package com.wuzhiwei.scroll
 					_t1 = t;
 				}
 				updateSideBar();
-				if( e is MouseEvent )
-				{
-					(e as MouseEvent).updateAfterEvent();					
-				}
-				else if( e is TouchEvent )
-				{
-					(e as TouchEvent).updateAfterEvent();					
-				}
+				e.updateAfterEvent();
 			}
 		}
 		
